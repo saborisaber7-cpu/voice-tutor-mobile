@@ -25,23 +25,23 @@ jobs:
 
       - name: Build APK
         run: |
-          # 1. ساخت اسکلت سالم فلاتر
+          # 1. ساخت پروژه تمیز
           flutter create --org com.voicetutor --project-name voice_tutor_app app_build
           cd app_build
 
-          # 2. اضافه کردن دسترسی‌های میکروفون و اینترنت
+          # 2. دسترسی‌های میکروفون و اینترنت
           sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
 
-          # 3. تغییر قطعی minSdkVersion به 23 (الزام دقیق پکیج record)
+          # 3. تغییر قطعی minSdk به 23 روی تمام فایل‌های گریدل (چه .gradle چه .gradle.kts)
           echo "flutter.minSdkVersion=23" >> android/local.properties
-          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g' android/app/build.gradle
-          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/g' android/app/build.gradle
+          find android/app -name "build.gradle*" -exec sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g' {} +
+          find android/app -name "build.gradle*" -exec sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/g' {} +
 
-          # 4. کپی کردن سورس و پکیج‌ها
+          # 4. کپی فایل‌های اصلی کد و پکیج‌ها
           cp ../pubspec.yaml pubspec.yaml
           cp ../lib/main.dart lib/main.dart
 
-          # 5. دریافت وابستگی‌ها و بیلد APK
+          # 5. دریافت پکیج‌ها و ساخت APK
           flutter pub get
           flutter build apk --release
 
