@@ -52,7 +52,7 @@ jobs:
       - name: 7. Build APK Release
         run: |
           cd app_build
-          flutter build apk --release --no-tree-shake-icons
+          flutter build apk --release --no-shrink --no-tree-shake-icons
 
       - name: 8. Upload Artifact
         uses: actions/upload-artifact@v4
