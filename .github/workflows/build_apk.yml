@@ -9,40 +9,43 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Set up Flutter
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          cache: true
 
-      - name: Scaffold Complete Flutter Project & Inject Code
+      - name: Initialize Android Skeleton & Set Permissions
         run: |
-          # 1. ساخت کامل اسکلت پروژه فلاتر شامل تنظیمات اندروید
+          # ساخت اسکلت کامل اندروید
           flutter create --org com.voicetutor --project-name voice_tutor_app temp_app
-          
-          # 2. کپی کردن پوشه اندروید ساخته شده به ریشه پروژه
           cp -r temp_app/android ./
           rm -rf temp_app
           
-          # 3. افزودن دسترسی میکروفون و اینترنت به مانیفست اندروید
+          # افزودن دسترسی ضبط صدا و اینترنت به مانیفست اندروید
           sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
+          
+          # تنظیم حداقل نسخه اندروید (minSdkVersion 21) برای پشتیبانی کامل از رکوردر صدا
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle || true
+          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/g' android/app/build.gradle || true
 
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Build Release APK
+      - name: Build APK Release
         run: flutter build apk --release
 
-      - name: Upload APK
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: voice-tutor-app
+          name: VoiceTutorApp
           path: build/app/outputs/flutter-apk/app-release.apk
