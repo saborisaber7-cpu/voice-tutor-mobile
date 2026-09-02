@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repo
+      - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Setup Java JDK
@@ -21,30 +21,38 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.24.0'
           channel: 'stable'
 
-      - name: Build APK
+      - name: Prepare and Build APK
         run: |
-          # ساخت پروژه تمیز
+          # 1. ساخت پروژه تمیز فلاتر
           flutter create --org com.voicetutor --project-name voice_tutor_app app_build
           cd app_build
 
-          # اضافه کردن پرمیشن‌ها
+          # 2. اضافه کردن پرمیشن ضبط صدا و اینترنت
           sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
 
-          # انتقال کدهای شما به پروژه
+          # 3. اعمال minSdkVersion=23
+          echo "flutter.minSdkVersion=23" >> android/local.properties
+          if [ -f android/app/build.gradle ]; then
+            sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g' android/app/build.gradle
+            sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/g' android/app/build.gradle
+          fi
+          if [ -f android/app/build.gradle.kts ]; then
+            sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/g' android/app/build.gradle.kts
+          fi
+
+          # 4. کپی فایل‌های پروژه
           cp ../pubspec.yaml pubspec.yaml
           cp ../lib/main.dart lib/main.dart
 
-          # گرفتن پکیج‌ها
+          # 5. بیلد نهایی
           flutter pub get
+          flutter build apk --release
 
-          # بیلد مستقیم با پاس دادن پارامتر minSdk به گریدل
-          flutter build apk --release --target-platform android-arm,android-arm64,android-x64 --extra-gen-snapshot-options=--suppress-unhandled-references || true
-          cd android && ./gradlew assembleRelease -PminSdkVersion=23 -PtargetSdkVersion=34
-
-      - name: Upload APK
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: VoiceTutor-Release-APK
-          path: app_build/android/app/build/outputs/apk/release/app-release.apk
+          path: app_build/build/app/outputs/flutter-apk/app-release.apk
