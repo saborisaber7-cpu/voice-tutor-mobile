@@ -21,31 +21,30 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.19.6'
           channel: 'stable'
 
-      - name: Build Application
+      - name: Build APK
         run: |
-          # 1. ساخت پروژه تمیز
+          # 1. ساخت پروژه تمیز بدون فایل‌های ناقص
           flutter create --org com.voicetutor --project-name voice_tutor_app app_build
           cd app_build
 
-          # 2. اضافه کردن پکیج‌های سازگار و تست‌شده
-          flutter pub add record:^5.1.2 audioplayers:^6.0.0 http:^1.2.1 path_provider:^2.1.2
-
-          # 3. دسترسی میکروفون و اینترنت
+          # 2. اضافه کردن دسترسی‌های اندروید به Manifest
           sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
 
-          # 4. تنظیم حداقل نسخه اندروید (سازگار با هر دو ساختار قدیم و جدید گریدل)
-          find android/app -name "build.gradle*" -exec sed -i 's/minSdkVersion .*/minSdkVersion 21/g' {} +
-          find android/app -name "build.gradle*" -exec sed -i 's/minSdk = .*/minSdk = 21/g' {} +
+          # 3. روش رسمی و بدون شکست تنظیم minSdk روی 21
+          echo "flutter.minSdkVersion=21" >> android/local.properties
 
-          # 5. کپی کردن کد صفحه اصلی
+          # 4. کپی فایل‌های اصلی کد و پکیج‌ها
+          cp ../pubspec.yaml pubspec.yaml
           cp ../lib/main.dart lib/main.dart
 
-          # 6. ساخت نهایی APK
+          # 5. دریافت پکیج‌ها و خروجی نهایی
+          flutter pub get
           flutter build apk --release
 
-      - name: Upload Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: VoiceTutor-Release-APK
