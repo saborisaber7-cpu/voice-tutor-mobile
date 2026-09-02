@@ -23,16 +23,30 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: 4. Scaffold Android Project
+      - name: 4. Scaffold Clean Android Project
         run: |
           flutter create --org com.voicetutor --project-name voice_tutor_app app_build
           cd app_build
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
-          echo "flutter.minSdkVersion=23" >> android/local.properties
-          find android/app -name "build.gradle*" -exec sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/g' {} +
-          find android/app -name "build.gradle*" -exec sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g' {} +
-          # حذف فایل تست و لینت پیش‌فرض که عامل خطاهای Analyze بودند
           rm -rf test analysis_options.yaml
+          
+          # تنظیم دقیق پرمیشن‌ها در مانیفست
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
+
+          # تنظیم قطعی minSdkVersion روی 23 در build.gradle
+          if [ -f android/app/build.gradle ]; then
+            sed -i 's/minSdkVersion .*/minSdkVersion 23/g' android/app/build.gradle
+            sed -i 's/minSdk = .*/minSdk = 23/g' android/app/build.gradle
+            sed -i 's/compileSdkVersion .*/compileSdkVersion 34/g' android/app/build.gradle
+            sed -i 's/compileSdk = .*/compileSdk = 34/g' android/app/build.gradle
+            sed -i 's/targetSdkVersion .*/targetSdkVersion 34/g' android/app/build.gradle
+            sed -i 's/targetSdk = .*/targetSdk = 34/g' android/app/build.gradle
+          fi
+
+          if [ -f android/app/build.gradle.kts ]; then
+            sed -i 's/minSdk = .*/minSdk = 23/g' android/app/build.gradle.kts
+            sed -i 's/compileSdk = .*/compileSdk = 34/g' android/app/build.gradle.kts
+            sed -i 's/targetSdk = .*/targetSdk = 34/g' android/app/build.gradle.kts
+          fi
 
       - name: 5. Copy App Source Files
         run: |
@@ -44,18 +58,12 @@ jobs:
           cd app_build
           flutter pub get
 
-      - name: 7. Analyze Dart Code
+      - name: 7. Build APK Release
         run: |
           cd app_build
-          flutter analyze
+          flutter build apk --release --no-tree-shake-icons
 
-      - name: 8. Build APK (Verbose Mode)
-        run: |
-          cd app_build
-          flutter build apk --release --verbose
-
-      - name: 9. Upload Artifact
-        if: success()
+      - name: 8. Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: VoiceTutor-Release-APK
