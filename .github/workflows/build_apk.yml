@@ -25,29 +25,12 @@ jobs:
 
       - name: Create Clean Flutter Project & Build
         run: |
-          # 1. ساخت یک پروژه فلاتر استاندارد کامل
           flutter create --org com.voicetutor --project-name voice_tutor_app my_app
-          
-          # 2. اضافه کردن دسترسی‌های میکروفون و اینترنت به مانیفست
           sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.INTERNET" />' my_app/android/app/src/main/AndroidManifest.xml
-
-          # 3. تنظیم حداقل نسخه اندروید برای پکیج ضبط صدا (minSdkVersion 21)
           sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' my_app/android/app/build.gradle || true
           sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/g' my_app/android/app/build.gradle || true
-
-          # 4. جایگزینی کدهای اصلی و پکیج‌ها
           cp pubspec.yaml my_app/pubspec.yaml
           cp lib/main.dart my_app/lib/main.dart
-
- اندروید برای پکیج ضبط صدا (minSdkVersion 21)
-          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' my_app/android/app/build.gradle || true
-          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/g' my_app/android/app/build.gradle || true
-
-          # 4. جایگزینی کدهای اصلی و پکیج‌ها
-          cp pubspec.yaml my_app/pubspec.yaml
-          cp lib/main.dart my_app/lib/main.dart
-
-          # 5. بیلد APK
           cd my_app
           flutter pub get
           flutter build apk --release
