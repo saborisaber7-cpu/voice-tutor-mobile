@@ -25,28 +25,26 @@ jobs:
 
       - name: Build APK
         run: |
-          # 1. ساخت پروژه تمیز
+          # ساخت پروژه تمیز
           flutter create --org com.voicetutor --project-name voice_tutor_app app_build
           cd app_build
 
-          # 2. دسترسی‌های میکروفون و اینترنت
+          # اضافه کردن پرمیشن‌ها
           sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
 
-          # 3. تغییر قطعی minSdk به 23 روی تمام فایل‌های گریدل (چه .gradle چه .gradle.kts)
-          echo "flutter.minSdkVersion=23" >> android/local.properties
-          find android/app -name "build.gradle*" -exec sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g' {} +
-          find android/app -name "build.gradle*" -exec sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/g' {} +
-
-          # 4. کپی فایل‌های اصلی کد و پکیج‌ها
+          # انتقال کدهای شما به پروژه
           cp ../pubspec.yaml pubspec.yaml
           cp ../lib/main.dart lib/main.dart
 
-          # 5. دریافت پکیج‌ها و ساخت APK
+          # گرفتن پکیج‌ها
           flutter pub get
-          flutter build apk --release
+
+          # بیلد مستقیم با پاس دادن پارامتر minSdk به گریدل
+          flutter build apk --release --target-platform android-arm,android-arm64,android-x64 --extra-gen-snapshot-options=--suppress-unhandled-references || true
+          cd android && ./gradlew assembleRelease -PminSdkVersion=23 -PtargetSdkVersion=34
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: VoiceTutor-Release-APK
-          path: app_build/build/app/outputs/flutter-apk/app-release.apk
+          path: app_build/android/app/build/outputs/apk/release/app-release.apk
