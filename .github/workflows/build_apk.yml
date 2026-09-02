@@ -21,26 +21,27 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.6'
           channel: 'stable'
 
       - name: Build APK
         run: |
-          # 1. ساخت پروژه تمیز بدون فایل‌های ناقص
+          # 1. ساخت اسکلت سالم فلاتر
           flutter create --org com.voicetutor --project-name voice_tutor_app app_build
           cd app_build
 
-          # 2. اضافه کردن دسترسی‌های اندروید به Manifest
+          # 2. اضافه کردن دسترسی‌های میکروفون و اینترنت
           sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
 
-          # 3. روش رسمی و بدون شکست تنظیم minSdk روی 21
-          echo "flutter.minSdkVersion=21" >> android/local.properties
+          # 3. تغییر قطعی minSdkVersion به 23 (الزام دقیق پکیج record)
+          echo "flutter.minSdkVersion=23" >> android/local.properties
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g' android/app/build.gradle
+          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/g' android/app/build.gradle
 
-          # 4. کپی فایل‌های اصلی کد و پکیج‌ها
+          # 4. کپی کردن سورس و پکیج‌ها
           cp ../pubspec.yaml pubspec.yaml
           cp ../lib/main.dart lib/main.dart
 
-          # 5. دریافت پکیج‌ها و خروجی نهایی
+          # 5. دریافت وابستگی‌ها و بیلد APK
           flutter pub get
           flutter build apk --release
 
