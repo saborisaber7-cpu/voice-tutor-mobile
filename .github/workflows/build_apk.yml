@@ -18,9 +18,10 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: 3. Setup Flutter
+      - name: 3. Setup Exact Flutter Version
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.19.6'
           channel: 'stable'
 
       - name: 4. Scaffold Clean Android Project
@@ -29,20 +30,13 @@ jobs:
           cd app_build
           rm -rf test analysis_options.yaml
           
-          # افزودن پرمیشن‌ها به AndroidManifest
+          # پرمیشن‌ها
           sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
 
-          # تنظیم صریح حداقل نسخه اندروید SDK 23
+          # تنظیم صریح minSdkVersion
           if [ -f android/app/build.gradle ]; then
             sed -i 's/minSdkVersion .*/minSdkVersion 23/g' android/app/build.gradle
-            sed -i 's/minSdk = .*/minSdk = 23/g' android/app/build.gradle
             sed -i 's/compileSdkVersion .*/compileSdkVersion 34/g' android/app/build.gradle
-            sed -i 's/compileSdk = .*/compileSdk = 34/g' android/app/build.gradle
-          fi
-
-          if [ -f android/app/build.gradle.kts ]; then
-            sed -i 's/minSdk = .*/minSdk = 23/g' android/app/build.gradle.kts
-            sed -i 's/compileSdk = .*/compileSdk = 34/g' android/app/build.gradle.kts
           fi
 
       - name: 5. Copy App Source Files
