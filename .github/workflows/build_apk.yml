@@ -9,49 +9,51 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: 1. Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Java JDK
+      - name: 2. Setup Java JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Flutter
+      - name: 3. Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
           channel: 'stable'
 
-      - name: Prepare and Build APK
+      - name: 4. Scaffold Android Project
         run: |
-          # 1. ساخت پروژه تمیز فلاتر
           flutter create --org com.voicetutor --project-name voice_tutor_app app_build
           cd app_build
-
-          # 2. اضافه کردن پرمیشن ضبط صدا و اینترنت
           sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
-
-          # 3. اعمال minSdkVersion=23
           echo "flutter.minSdkVersion=23" >> android/local.properties
-          if [ -f android/app/build.gradle ]; then
-            sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g' android/app/build.gradle
-            sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/g' android/app/build.gradle
-          fi
-          if [ -f android/app/build.gradle.kts ]; then
-            sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/g' android/app/build.gradle.kts
-          fi
+          find android/app -name "build.gradle*" -exec sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/g' {} +
+          find android/app -name "build.gradle*" -exec sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g' {} +
 
-          # 4. کپی فایل‌های پروژه
-          cp ../pubspec.yaml pubspec.yaml
-          cp ../lib/main.dart lib/main.dart
+      - name: 5. Copy App Source Files
+        run: |
+          cp pubspec.yaml app_build/pubspec.yaml
+          cp lib/main.dart app_build/lib/main.dart
 
-          # 5. بیلد نهایی
+      - name: 6. Resolve Dependencies
+        run: |
+          cd app_build
           flutter pub get
-          flutter build apk --release
 
-      - name: Upload APK Artifact
+      - name: 7. Analyze Dart Code
+        run: |
+          cd app_build
+          flutter analyze
+
+      - name: 8. Build APK (Verbose Mode)
+        run: |
+          cd app_build
+          flutter build apk --release --verbose
+
+      - name: 9. Upload Artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: VoiceTutor-Release-APK
