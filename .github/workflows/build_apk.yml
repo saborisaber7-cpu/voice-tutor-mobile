@@ -23,20 +23,30 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Create Clean Flutter Project & Build
+      - name: Build Application
         run: |
-          flutter create --org com.voicetutor --project-name voice_tutor_app my_app
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.INTERNET" />' my_app/android/app/src/main/AndroidManifest.xml
-          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' my_app/android/app/build.gradle || true
-          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/g' my_app/android/app/build.gradle || true
-          cp pubspec.yaml my_app/pubspec.yaml
-          cp lib/main.dart my_app/lib/main.dart
-          cd my_app
-          flutter pub get
+          # 1. ساخت پروژه تمیز
+          flutter create --org com.voicetutor --project-name voice_tutor_app app_build
+          cd app_build
+
+          # 2. اضافه کردن پکیج‌های سازگار و تست‌شده
+          flutter pub add record:^5.1.2 audioplayers:^6.0.0 http:^1.2.1 path_provider:^2.1.2
+
+          # 3. دسترسی میکروفون و اینترنت
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
+
+          # 4. تنظیم حداقل نسخه اندروید (سازگار با هر دو ساختار قدیم و جدید گریدل)
+          find android/app -name "build.gradle*" -exec sed -i 's/minSdkVersion .*/minSdkVersion 21/g' {} +
+          find android/app -name "build.gradle*" -exec sed -i 's/minSdk = .*/minSdk = 21/g' {} +
+
+          # 5. کپی کردن کد صفحه اصلی
+          cp ../lib/main.dart lib/main.dart
+
+          # 6. ساخت نهایی APK
           flutter build apk --release
 
-      - name: Upload APK
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: VoiceTutor-Release-APK
-          path: my_app/build/app/outputs/flutter-apk/app-release.apk
+          path: app_build/build/app/outputs/flutter-apk/app-release.apk
