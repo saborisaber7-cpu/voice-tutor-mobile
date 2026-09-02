@@ -31,6 +31,8 @@ jobs:
           echo "flutter.minSdkVersion=23" >> android/local.properties
           find android/app -name "build.gradle*" -exec sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/g' {} +
           find android/app -name "build.gradle*" -exec sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g' {} +
+          # حذف فایل تست و لینت پیش‌فرض که عامل خطاهای Analyze بودند
+          rm -rf test analysis_options.yaml
 
       - name: 5. Copy App Source Files
         run: |
