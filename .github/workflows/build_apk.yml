@@ -1,35 +1,48 @@
-   name: Build Flutter APK
+name: Build Flutter APK
 
-   on:
-     push:
-       branches: [ main ]
-     workflow_dispatch:
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
 
-   jobs:
-     build:
-       runs-on: ubuntu-latest
-       steps:
-         - uses: actions/checkout@v4
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-         - name: Set up Java
-           uses: actions/setup-java@v4
-           with:
-             distribution: 'temurin'
-             java-version: '17'
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
-         - name: Set up Flutter
-           uses: subosito/flutter-action@v2
-           with:
-             channel: 'stable'
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
 
-         - name: Install dependencies
-           run: flutter pub get
+      - name: Scaffold Complete Flutter Project & Inject Code
+        run: |
+          # 1. ساخت کامل اسکلت پروژه فلاتر شامل تنظیمات اندروید
+          flutter create --org com.voicetutor --project-name voice_tutor_app temp_app
+          
+          # 2. کپی کردن پوشه اندروید ساخته شده به ریشه پروژه
+          cp -r temp_app/android ./
+          rm -rf temp_app
+          
+          # 3. افزودن دسترسی میکروفون و اینترنت به مانیفست اندروید
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
 
-         - name: Build APK
-           run: flutter build apk --release
+      - name: Install Dependencies
+        run: flutter pub get
 
-         - name: Upload APK Artifact
-           uses: actions/upload-artifact@v4
-           with:
-             name: app-release-apk
-             path: build/app/outputs/flutter-apk/app-release.apk
+      - name: Build Release APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: voice-tutor-app
+          path: build/app/outputs/flutter-apk/app-release.apk
